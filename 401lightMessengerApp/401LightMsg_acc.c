@@ -90,8 +90,14 @@ static bitmapMatrix* bitMatrix_text_create(const char* text, bitmapMatrixFont* f
  * @return Always returns false.
  */
 static bool app_acc_input_callback(InputEvent* input_event, void* ctx) {
-    UNUSED(ctx);
-    UNUSED(input_event);
+    furi_assert(ctx);
+    AppContext* app = ctx;
+    
+    // Handle back button
+    if(input_event->type == InputTypeShort && input_event->key == InputKeyBack) {
+        scene_manager_search_and_switch_to_previous_scene(app->scene_manager, AppSceneMainMenu);
+        return true;
+    }
 
     return false;
 }
@@ -312,7 +318,7 @@ AppAcc* app_acc_alloc(void* ctx) {
     // Configure view
     appAcc->view = view_alloc();
 
-    view_set_context(appAcc->view, appAcc);
+    view_set_context(appAcc->view, app);
     view_set_input_callback(appAcc->view, app_acc_input_callback);
     view_set_draw_callback(appAcc->view, app_acc_render_callback);
 
