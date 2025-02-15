@@ -32,8 +32,8 @@
 // LIS2DH12 accelerometer configurations
 #define PARAM_INT1_DURATION           0x10
 #define PARAM_INT2_DURATION           0x10
-#define PARAM_INT1_THRESHOLD          60
-#define PARAM_INT2_THRESHOLD          60
+#define PARAM_INT1_THRESHOLD          40
+#define PARAM_INT2_THRESHOLD          40
 #define PARAM_INT_POLARITY            PROPERTY_DISABLE
 #define PARAM_ACCELEROMETER_HIGH_PASS LIS2DH12_LIGHT // High Pass Filter
 #define PARAM_ACCELEROMETER_SCALE     LIS2DH12_8g // Set scale to +/-2g
