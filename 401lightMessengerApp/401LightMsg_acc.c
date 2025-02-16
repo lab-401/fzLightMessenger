@@ -528,14 +528,16 @@ void app_scene_acc_on_enter(void* ctx) {
             for(size_t i = 0; i <= len; i++) {
                 if(buf[i] == ' ' || buf[i] == '\0') {
                     buf[i] = '\0';
-                    if(appAcc->bitmapMatrix == NULL) {
-                        appAcc->bitmapMatrix =
-                            bitMatrix_text_create((char*)&buf[0], LightMsgSetFont);
-                        bitMatrix_last = appAcc->bitmapMatrix;
-                    } else {
-                        bitMatrix_last->next_bitmap =
-                            bitMatrix_text_create((char*)&buf[start], LightMsgSetFont);
-                        bitMatrix_last = bitMatrix_last->next_bitmap;
+                    if (strlen(&buf[start])) {
+                        if(appAcc->bitmapMatrix == NULL) {
+                            appAcc->bitmapMatrix =
+                                bitMatrix_text_create((char*)&buf[0], LightMsgSetFont);
+                            bitMatrix_last = appAcc->bitmapMatrix;
+                        } else {
+                            bitMatrix_last->next_bitmap =
+                                bitMatrix_text_create((char*)&buf[start], LightMsgSetFont);
+                            bitMatrix_last = bitMatrix_last->next_bitmap;
+                        }
                     }
                     start = i + 1;
                 }
