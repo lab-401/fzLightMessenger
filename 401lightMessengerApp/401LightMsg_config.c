@@ -52,7 +52,7 @@ const char* const lightmsg_color_text[] = {
     "R4inb0w", // animated colors
     "Sp4rkl3", // animated colors
     "V4p0rw4v3", // animated colors
-    "R3dGr33n", // alternate colors
+    "R3dBlu3", // alternate colors
 };
 
 // Animation values (callbacks)
@@ -226,7 +226,7 @@ void LightMsg_color_cb_directional(uint16_t tick, bool direction, uint32_t* resu
     UNUSED(tick);
     for(size_t row = 0; row < LIGHTMSG_LED_ROWS; ++row) {
         result[row] = direction ? lightmsg_colors_flat[COLOR_RED] :
-                                  lightmsg_colors_flat[COLOR_GREEN];
+                                  lightmsg_colors_flat[COLOR_BLUE];
     }
 }
 
