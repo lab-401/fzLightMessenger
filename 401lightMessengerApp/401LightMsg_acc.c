@@ -221,7 +221,7 @@ static int32_t app_acc_worker(void* ctx) {
 
     uint32_t tick = furi_get_tick();
     uint32_t direction_change_count = 0;
-    uint8_t end_count = 0;
+    uint8_t end_message_count = 0;
 
     uint32_t message_duration_ms = lightmsg_speed_value[light_msg_data->speed];
 
@@ -261,8 +261,8 @@ static int32_t app_acc_worker(void* ctx) {
                     bitmapMatrix = bitmapMatrix->next_bitmap;
                 } else {
                     // Show the last message for a little longer
-                    if(++end_count > 1) {
-                        end_count = 0;
+                    if(++end_message_count > 1) {
+                        end_message_count = 0;
                         bitmapMatrix = bitmapMatrix->next_bitmap;
                     }
                 }
@@ -290,6 +290,7 @@ static int32_t app_acc_worker(void* ctx) {
                 }
             }
 
+            // Play a tone, if we aquired the speaker
             if(speaker) {
                 float freq;
                 if((appAcc->direction ^ light_msg_data->orientation)) {
@@ -367,17 +368,11 @@ static int32_t app_acc_worker(void* ctx) {
             }
         } else {
             for(row = 0; row < LIGHTMSG_LED_ROWS; row++) {
-                //  Assign R/G/B off value
+                //  Assign R/G/B off value to each LED
                 r = 0x00;
                 g = 0x00;
                 b = 0x00;
-
-                // Orientation (wheel up/wheel down)
-                if(light_msg_data->orientation) {
-                    SK6805_set_led_color(row, r, g, b);
-                } else {
-                    SK6805_set_led_color(LIGHTMSG_LED_ROWS - 1 - row, r, g, b);
-                }
+                SK6805_set_led_color(row, r, g, b);
             }
         }
         // Stops all OS operation while sending data to LEDs
@@ -519,26 +514,38 @@ void app_scene_acc_on_enter(void* ctx) {
 
     switch(appAcc->displayMode) {
     case APPACC_DISPLAYMODE_TEXT:
+        // If the speed is not 0, we need to split the text into multiple bitmaps
         if(light_msg_data->speed > 0) {
+            // Copy our message to a buffer
             char buf[sizeof(light_msg_data->text)];
             strncpy(buf, light_msg_data->text, sizeof(buf));
             size_t len = strlen(buf);
             size_t start = 0;
+
+            // Keep track of the last bitmapMatrix, so we can append to it.
             bitmapMatrix* bitMatrix_last = NULL;
+
             for(size_t i = 0; i <= len; i++) {
+                // Split the text on spaces or the null terminator
                 if(buf[i] == ' ' || buf[i] == '\0') {
+                    // Null terminate the string at the space                    
                     buf[i] = '\0';
+
+                    // If we have a non-empty string, create a bitmapMatrix
                     if (strlen(&buf[start])) {
                         if(appAcc->bitmapMatrix == NULL) {
+                            // Create the first bitmapMatrix
                             appAcc->bitmapMatrix =
                                 bitMatrix_text_create((char*)&buf[0], LightMsgSetFont);
                             bitMatrix_last = appAcc->bitmapMatrix;
                         } else {
+                            // Append to the last bitmapMatrix
                             bitMatrix_last->next_bitmap =
                                 bitMatrix_text_create((char*)&buf[start], LightMsgSetFont);
                             bitMatrix_last = bitMatrix_last->next_bitmap;
                         }
                     }
+                    // Move the start to the next character
                     start = i + 1;
                 }
             }
