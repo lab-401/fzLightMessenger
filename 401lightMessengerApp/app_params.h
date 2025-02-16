@@ -41,8 +41,9 @@
 #define PARAM_OPERATION_MODE          LIS2DH12_HR_12bit // Set operation mode to high-resolution mode
 
 // Additional configurations
-#define PARAM_SHADER_RAINBOW_IS_SINE 0
-#define PARAM_BRIGHTNESS_CONFIG_EN   0
+#define PARAM_SHADER_RAINBOW_IS_SINE  0
+#define PARAM_BRIGHTNESS_CONFIG_EN    0
+#define PARAM_ACCELEROMETER_CONFIG_EN 0
 
 #define PARAM_BMP_EDITOR_MIN_RES_W 16
 #define PARAM_BMP_EDITOR_MAX_RES_W 41

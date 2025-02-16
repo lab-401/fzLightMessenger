@@ -70,7 +70,6 @@ color_animation_callback lightmsg_color_value[] = {
     LightMsg_color_cb_vaporwave, // animated colors
 };
 
-
 static uint32_t LightMsg_color_pal_nyancat[] = {
     lightmsg_colors_flat[COLOR_RED],
     lightmsg_colors_flat[COLOR_RED],
@@ -107,6 +106,73 @@ static uint32_t LightMsg_color_pal_vaporwave[] = {
     0x213ff9,
     0x0074fb,
     0x00d3ff,
+};
+
+const LightMsg_Mirror lightmsg_mirror_value[] = {
+    LightMsg_MirrorDisabled,
+    LightMsg_MirrorEnabled,
+};
+
+const char* const lightmsg_mirror_text[] = {
+    "Disabled",
+    "Enabled",
+};
+
+// Speed (ms) to change text being display (0=never, 1 sec, 0.5 sec)
+const uint32_t lightmsg_speed_value[] = {
+    0,
+    1000,
+    500,
+};
+
+const char* const lightmsg_speed_text[] = {
+    "Off",
+    "Slow",
+    "Fast",
+};
+
+// Delay in microseconds (us) to wait after rendering a column
+const uint32_t lightmsg_width_value[] = {
+    250,
+    600,
+    1200,
+};
+
+const char* const lightmsg_width_text[] = {
+    "Narrow",
+    "Normal",
+    "Wide",
+};
+
+// Max appAcc->cycles before switching directions
+const uint16_t lightmsg_accel_value[] = {
+    UINT16_MAX,
+    160,
+    150,
+    140,
+};
+
+const char* const lightmsg_accel_text[] = {
+    "Accel",
+    "Slow",
+    "Normal",
+    "Fast",
+};
+
+const float lightmsg_tone_value[] = {
+    0,
+    440,
+    440 * 1.5,
+    440 * 2,
+    440 * 4,
+};
+
+const char* const lightmsg_tone_text[] = {
+    "Off",
+    "Tone 1",
+    "Tone 2",
+    "Tone 3",
+    "Tone 4",
 };
 
 static uint8_t sine_wave[256] = {
@@ -266,6 +332,66 @@ void on_change_color(VariableItem* item) {
     variable_item_set_current_value_text(item, lightmsg_color_text[index]);
 }
 
+void on_change_mirror(VariableItem* item) {
+    AppContext* app = variable_item_get_context(item);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    uint8_t index = variable_item_get_current_value_index(item);
+    light_msg_data->mirror = lightmsg_mirror_value[index] == LightMsg_MirrorEnabled;
+    variable_item_set_current_value_text(item, lightmsg_mirror_text[index]);
+}
+
+void on_change_speed(VariableItem* item) {
+    AppContext* app = variable_item_get_context(item);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    uint8_t index = variable_item_get_current_value_index(item);
+    light_msg_data->speed = index;
+    variable_item_set_current_value_text(item, lightmsg_speed_text[index]);
+}
+
+void on_change_width(VariableItem* item) {
+    AppContext* app = variable_item_get_context(item);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    uint8_t index = variable_item_get_current_value_index(item);
+    light_msg_data->width = index;
+    variable_item_set_current_value_text(item, lightmsg_width_text[index]);
+}
+
+void on_change_accel(VariableItem* item) {
+    AppContext* app = variable_item_get_context(item);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    uint8_t index = variable_item_get_current_value_index(item);
+    light_msg_data->accel = index;
+    variable_item_set_current_value_text(item, lightmsg_accel_text[index]);
+}
+
+void on_change_tone1(VariableItem* item) {
+    AppContext* app = variable_item_get_context(item);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    uint8_t index = variable_item_get_current_value_index(item);
+    light_msg_data->tone1 = index;
+    if(index > 0 && furi_hal_speaker_acquire(500)) {
+        furi_hal_speaker_start(lightmsg_tone_value[index], 1.0);
+        furi_delay_ms(100);
+        furi_hal_speaker_stop();
+        furi_hal_speaker_release();
+    }
+    variable_item_set_current_value_text(item, lightmsg_tone_text[index]);
+}
+
+void on_change_tone2(VariableItem* item) {
+    AppContext* app = variable_item_get_context(item);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    uint8_t index = variable_item_get_current_value_index(item);
+    light_msg_data->tone2 = index;
+    if(index > 0 && furi_hal_speaker_acquire(500)) {
+        furi_hal_speaker_start(lightmsg_tone_value[index], 1.0);
+        furi_delay_ms(100);
+        furi_hal_speaker_stop();
+        furi_hal_speaker_release();
+    }
+    variable_item_set_current_value_text(item, lightmsg_tone_text[index]);
+}
+
 /**
  * @brief Allocate memory and initialize the app configuration.
  *
@@ -308,6 +434,43 @@ AppConfig* app_config_alloc(void* ctx) {
         appConfig->list, "Color", COUNT_OF(lightmsg_color_text), on_change_color, app);
     variable_item_set_current_value_index(item, light_msg_data->color); // 0,10,20,30,...
     variable_item_set_current_value_text(item, lightmsg_color_text[light_msg_data->color]);
+
+    item = variable_item_list_add(
+        appConfig->list, "Mirror", COUNT_OF(lightmsg_mirror_text), on_change_mirror, app);
+    variable_item_set_current_value_index(item, light_msg_data->mirror ? 1 : 0);
+    variable_item_set_current_value_text(
+        item, lightmsg_mirror_text[light_msg_data->mirror ? 1 : 0]);
+
+    item = variable_item_list_add(
+        appConfig->list, "Width", COUNT_OF(lightmsg_width_text), on_change_width, app);
+    variable_item_set_current_value_index(item, light_msg_data->width);
+    variable_item_set_current_value_text(item, lightmsg_width_text[light_msg_data->width]);
+
+    item = variable_item_list_add(
+        appConfig->list, "Tone 1", COUNT_OF(lightmsg_tone_text), on_change_tone1, app);
+    variable_item_set_current_value_index(item, light_msg_data->tone1);
+    variable_item_set_current_value_text(item, lightmsg_tone_text[light_msg_data->tone1]);
+
+    item = variable_item_list_add(
+        appConfig->list, "Tone 2", COUNT_OF(lightmsg_tone_text), on_change_tone2, app);
+    variable_item_set_current_value_index(item, light_msg_data->tone2);
+    variable_item_set_current_value_text(item, lightmsg_tone_text[light_msg_data->tone2]);
+
+    /*
+    // Feature not implemented yet
+    item = variable_item_list_add(
+        appConfig->list, "Msg Speed", COUNT_OF(lightmsg_speed_text), on_change_speed, app);
+    variable_item_set_current_value_index(item, light_msg_data->speed);
+    variable_item_set_current_value_text(item, lightmsg_speed_text[light_msg_data->speed]);
+    */
+
+// Activate the accelerometer menu or not.
+#if PARAM_ACCELEROMETER_CONFIG_EN == 1
+    item = variable_item_list_add(
+        appConfig->list, "Motion", COUNT_OF(lightmsg_accel_text), on_change_accel, app);
+    variable_item_set_current_value_index(item, light_msg_data->accel);
+    variable_item_set_current_value_text(item, lightmsg_accel_text[light_msg_data->accel]);
+#endif
 
     return appConfig;
 }

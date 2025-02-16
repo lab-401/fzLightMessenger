@@ -11,12 +11,20 @@
 #include <storage/storage.h>
 #include <toolbox/path.h>
 // #include "401LightMsg_config.h"
-#define LIGHTMSG_VERSION             "1.0"
+#define LIGHTMSG_VERSION             "1.1"
 #define LIGHTMSG_DEFAULT_ORIENTATION 0
 #define LIGHTMSG_DEFAULT_BRIGHTNESS  3
 #define LIGHTMSG_DEFAULT_COLOR       1
 #define LIGHTMSG_DEFAULT_TEXT        "Lab401"
 #define LIGHTMSG_DEFAULT_BITMAPPATH  LIGHTMSGCONF_SAVE_FOLDER
+
+#define LIGHTMSG_DEFAULT_MIRROR 0
+#define LIGHTMSG_DEFAULT_SPEED  0
+#define LIGHTMSG_DEFAULT_WIDTH  1
+#define LIGHTMSG_DEFAULT_ACCEL  0
+#define LIGHTMSG_DEFAULT_TONE1  0
+#define LIGHTMSG_DEFAULT_TONE2  0
+
 #include "401_err.h"
 #include "app_params.h"
 
@@ -29,6 +37,13 @@ typedef struct {
     uint8_t brightness;
     bool orientation;
     color_animation_callback cb;
+    // New features
+    bool mirror; // true = mirror, false = no mirror
+    uint8_t speed; // speed index
+    uint8_t width; // width index
+    uint8_t accel; // acceleration index
+    uint8_t tone1; // tone index when first interrupt is detected
+    uint8_t tone2; // tone index when second interrupt is detected
 } Configuration;
 
 l401_err config_alloc(Configuration** config);

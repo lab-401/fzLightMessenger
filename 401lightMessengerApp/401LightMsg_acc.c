@@ -136,7 +136,10 @@ static void swipes_init(void* ctx, uint8_t direction) {
  */
 static void zmax_callback(void* ctx) {
     AppContext* app = (AppContext*)ctx; // Main app struct
-    swipes_init(app, 1);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    if(light_msg_data->accel == 0) {
+        swipes_init(app, 1);
+    }
 }
 
 /**
@@ -146,7 +149,10 @@ static void zmax_callback(void* ctx) {
  */
 static void zmin_callback(void* ctx) {
     AppContext* app = (AppContext*)ctx; // Main app struct
-    swipes_init(app, 0);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    if(light_msg_data->accel == 0) {
+        swipes_init(app, 0);
+    }
 }
 
 /**
@@ -182,7 +188,14 @@ static int32_t app_acc_worker(void* ctx) {
 
     // The shader updating function is the callback associated to the "color"
     color_animation_callback shader = appData->shader;
-    lis2dh12_init(&app->data->lis2dh12);
+
+    // Initialize the LIS2DH12 if we are using the accelerometer.
+    if(light_msg_data->accel == 0) {
+        lis2dh12_init(&app->data->lis2dh12);
+    }
+
+    bool speaker = furi_hal_speaker_acquire(100);
+    uint32_t render_delay_us = lightmsg_width_value[light_msg_data->width];
 
     while(running) {
         // Checks if the thread must be ended.
@@ -195,6 +208,23 @@ static int32_t app_acc_worker(void* ctx) {
 
         // Update the cycles counter
         swipes_tick(appAcc);
+        if(appAcc->cycles > lightmsg_accel_value[light_msg_data->accel]) {
+            swipes_init(app, !appAcc->direction);
+        }
+
+        if(appAcc->cycles == 1 && speaker) {
+            float freq;
+            if((appAcc->direction ^ light_msg_data->orientation)) {
+                freq = lightmsg_tone_value[light_msg_data->tone1];
+            } else {
+                freq = lightmsg_tone_value[light_msg_data->tone2];
+            }
+            if(freq > 0) {
+                furi_hal_speaker_start(freq, 1.0);
+            }
+        } else if(appAcc->cycles == 10 && speaker) {
+            furi_hal_speaker_stop();
+        }
 
         /*             Display diagram
 
@@ -234,10 +264,11 @@ static int32_t app_acc_worker(void* ctx) {
 
         // Update the color according to the current shader
         shader(time, color, app);
-        // Let the leds shine for a bit
-        furi_delay_us(500);
 
         if(is_bitmap_window) {
+            if(light_msg_data->mirror) {
+                column_directed = bitmapMatrix->width - column_directed - 1;
+            }
             // Draws each rows for each collumns
             for(row = 0; row < LIGHTMSG_LED_ROWS; row++) {
                 pixel = (uint8_t)(bitmapMatrix->array[row][column_directed]);
@@ -270,8 +301,15 @@ static int32_t app_acc_worker(void* ctx) {
             }
         }
         // Stops all OS operation while sending data to LEDs
+        // TODO: Switch to https://github.com/jamisonderek/flipper-zero-tutorials/tree/main/gpio/ws2812b_tester to avoid this?
         SK6805_update();
-        furi_delay_us(100);
+        // Let the leds shine for a bit
+        furi_delay_us(render_delay_us);
+    }
+
+    if(speaker) {
+        furi_hal_speaker_stop();
+        furi_hal_speaker_release();
     }
     SK6805_off();
     bitmapMatrix_free(appAcc->bitmapMatrix);

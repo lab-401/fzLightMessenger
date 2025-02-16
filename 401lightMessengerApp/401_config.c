@@ -41,6 +41,13 @@ void config_default_init(Configuration* config) {
     config->color = LIGHTMSG_DEFAULT_COLOR; // Default color
     config->brightness = LIGHTMSG_DEFAULT_BRIGHTNESS; // Default brightness
     config->orientation = LIGHTMSG_DEFAULT_ORIENTATION; // Default orientation (e.g., false)
+    // version 1.1 features
+    config->mirror = LIGHTMSG_DEFAULT_MIRROR;
+    config->speed = LIGHTMSG_DEFAULT_SPEED;
+    config->width = LIGHTMSG_DEFAULT_WIDTH;
+    config->accel = LIGHTMSG_DEFAULT_ACCEL;
+    config->tone1 = LIGHTMSG_DEFAULT_TONE1;
+    config->tone2 = LIGHTMSG_DEFAULT_TONE2;
 }
 
 /**
@@ -80,6 +87,14 @@ l401_err config_to_json(Configuration* config, char** jsontxt) {
     cJSON_AddNumberToObject(
         json, "brightness", LightMsg_BrightnessBlinding); // (double)config->brightness);
     cJSON_AddBoolToObject(json, "orientation", config->orientation);
+
+    // Add version 1.1 features
+    cJSON_AddBoolToObject(json, "mirror", config->mirror);
+    cJSON_AddNumberToObject(json, "speed", config->speed);
+    cJSON_AddNumberToObject(json, "width", config->width);
+    cJSON_AddNumberToObject(json, "accel", config->accel);
+    cJSON_AddNumberToObject(json, "tone1", config->tone1);
+    cJSON_AddNumberToObject(json, "tone2", config->tone2);
 
     // Convert cJSON object to string
     char* string = cJSON_PrintUnformatted(json);
@@ -135,6 +150,14 @@ l401_err json_to_config(char* jsontxt, Configuration* config) {
     cJSON* json_brightness = cJSON_GetObjectItemCaseSensitive(json, "brightness");
     cJSON* json_orientation = cJSON_GetObjectItemCaseSensitive(json, "orientation");
 
+    // Optional fields (version 1.1)
+    cJSON* json_mirror = cJSON_GetObjectItemCaseSensitive(json, "mirror");
+    cJSON* json_speed = cJSON_GetObjectItemCaseSensitive(json, "speed");
+    cJSON* json_width = cJSON_GetObjectItemCaseSensitive(json, "width");
+    cJSON* json_accel = cJSON_GetObjectItemCaseSensitive(json, "accel");
+    cJSON* json_tone1 = cJSON_GetObjectItemCaseSensitive(json, "tone1");
+    cJSON* json_tone2 = cJSON_GetObjectItemCaseSensitive(json, "tone2");
+
     if(!cJSON_IsString(json_version) || !cJSON_IsString(json_text) ||
        !cJSON_IsString(json_bitmapPath) || !cJSON_IsNumber(json_color) ||
        !cJSON_IsNumber(json_brightness) || !cJSON_IsBool(json_orientation)) {
@@ -147,13 +170,43 @@ l401_err json_to_config(char* jsontxt, Configuration* config) {
 
     config->version = strdup(json_version->valuestring);
     strncpy(config->text, json_text->valuestring, LIGHTMSG_MAX_TEXT_LEN);
-    config->text[LIGHTMSG_MAX_TEXT_LEN ] = '\0';
+    config->text[LIGHTMSG_MAX_TEXT_LEN] = '\0';
     strncpy(config->bitmapPath, json_bitmapPath->valuestring, LIGHTMSG_MAX_BITMAPPATH_LEN);
-    config->bitmapPath[LIGHTMSG_MAX_BITMAPPATH_LEN ] = '\0';
+    config->bitmapPath[LIGHTMSG_MAX_BITMAPPATH_LEN] = '\0';
     // config->text = strdup(json_text->valuestring);
     config->color = (uint8_t)json_color->valuedouble;
     config->brightness = (uint8_t)json_brightness->valuedouble;
     config->orientation = cJSON_IsTrue(json_orientation) ? true : false;
+
+    // version 1.1+ features
+    if(cJSON_IsBool(json_mirror)) {
+        if(!cJSON_IsNumber(json_speed) || !cJSON_IsNumber(json_width) ||
+           !cJSON_IsNumber(json_accel) || !cJSON_IsNumber(json_tone1) ||
+           !cJSON_IsNumber(json_tone2)) {
+            cJSON_Delete(json);
+            FURI_LOG_E(TAG, "Error: Malformed v1.1 configuration");
+            return L401_ERR_MALFORMED;
+        }
+        config->mirror = cJSON_IsTrue(json_mirror) ? true : false;
+        config->speed = (uint8_t)json_speed->valuedouble;
+        config->width = (uint8_t)json_width->valuedouble;
+        config->accel = (uint8_t)json_accel->valuedouble;
+        config->tone1 = (uint8_t)json_tone1->valuedouble;
+        config->tone2 = (uint8_t)json_tone2->valuedouble;
+    } else {
+        // Upgrade to version 1.1
+        if(config->version != NULL) {
+            free(config->version);
+            config->version = strdup(LIGHTMSG_VERSION);
+        }
+        config->mirror = LIGHTMSG_DEFAULT_MIRROR;
+        config->speed = LIGHTMSG_DEFAULT_SPEED;
+        config->width = LIGHTMSG_DEFAULT_WIDTH;
+        config->accel = LIGHTMSG_DEFAULT_ACCEL;
+        config->tone1 = LIGHTMSG_DEFAULT_TONE1;
+        config->tone2 = LIGHTMSG_DEFAULT_TONE2;
+    }
+
     cJSON_Delete(json);
     return L401_OK;
 }

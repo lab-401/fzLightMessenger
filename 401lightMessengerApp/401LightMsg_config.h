@@ -73,6 +73,31 @@ typedef enum {
     LightMsg_ColorRainbow
 } LightMsg_Color_index;
 
+// Custom configuration
+typedef enum {
+    LightMsg_MirrorDisabled = 0,
+    LightMsg_MirrorEnabled = 1
+} LightMsg_Mirror;
+
+extern const LightMsg_Mirror lightmsg_mirror_value[];
+extern const char* const lightmsg_mirror_text[];
+
+// Speed (ms) to change text being display (0=never, 1 sec, 0.5 sec)
+extern const uint32_t lightmsg_speed_value[];
+extern const char* const lightmsg_speed_text[];
+
+// Delay in microseconds (us) to wait after rendering a column
+extern const uint32_t lightmsg_width_value[];
+extern const char* const lightmsg_width_text[];
+
+// Max appAcc->cycles before switching directions
+extern const uint16_t lightmsg_accel_value[];
+extern const char* const lightmsg_accel_text[];
+
+// Frequency of the tone when interrupt is detected
+extern const float lightmsg_tone_value[];
+extern const char* const lightmsg_tone_text[];
+
 // Animation labels
 extern const char* const lightmsg_color_text[];
 extern color_animation_callback lightmsg_color_value[];
