@@ -9,7 +9,7 @@
 
 // General Light Message configurations
 #define LIGHTMSG_LED_ROWS           16
-#define LIGHTMSG_MAX_TEXT_LEN       16
+#define LIGHTMSG_MAX_TEXT_LEN       64 // Maximum len animated text message (max 25 displayed at once)
 #define LIGHTMSG_MAX_BITMAPPATH_LEN 128
 #define LIGHTMSG_MAX_BITMAPNAME_LEN 32
 

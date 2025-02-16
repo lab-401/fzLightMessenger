@@ -9,10 +9,7 @@
 #include "401LightMsg_config.h"
 #include "bmp.h"
 #include "font.h"
-#include "gui/gui.h"
 #include "gui/view_dispatcher.h"
-#define PI  3.14159
-#define PI3 PI / 3
 static const char* TAG = "401_LightMsgAcc";
 
 /**
@@ -40,13 +37,20 @@ static bitmapMatrix* bitMatrix_text_create(const char* text, bitmapMatrixFont* f
     uint8_t fontWidth = font[0];
     uint8_t fontHeight = font[1];
     uint8_t fontOffset = font[2];
-    uint8_t totalWidth = (fontWidth + FONT_SPACE_WIDTH) * textLen;
+    uint8_t maxTextLen = UINT8_MAX / (fontWidth + FONT_SPACE_WIDTH);
+    uint8_t totalWidth;
     bitmapMatrix* bitMatrix = NULL;
     uint8_t letter = 0;
     size_t letterPtr = 0;
     size_t bitMatrixOffset = 0;
     bitMatrix = malloc(sizeof(bitmapMatrix));
     if(!bitMatrix) return NULL;
+
+    if(textLen > maxTextLen) {
+        FURI_LOG_E(TAG, "Text is too long, max length is %d", maxTextLen);
+        textLen = maxTextLen;
+    }
+    totalWidth = (fontWidth + FONT_SPACE_WIDTH) * textLen;
 
     bitMatrix->width = totalWidth;
     bitMatrix->height = fontHeight;
@@ -241,7 +245,8 @@ static int32_t app_acc_worker(void* ctx) {
             furi_hal_speaker_stop();
         }
 
-        if((furi_get_tick() - tick) > lightmsg_speed_value[light_msg_data->speed]) {
+        if((furi_get_tick() - tick) > lightmsg_speed_value[light_msg_data->speed] &&
+           appAcc->cycles == 10) {
             tick = furi_get_tick();
             if(bitmapMatrix->next_bitmap) {
                 bitmapMatrix = bitmapMatrix->next_bitmap;
@@ -256,18 +261,14 @@ static int32_t app_acc_worker(void* ctx) {
         if(bitmapMatrix == NULL) {
             bitmapMatrix = appAcc->bitmapMatrix;
             if(bitmapMatrix->next_bitmap != NULL) {
-                furi_hal_speaker_stop();
-                for(row = 0; row < LIGHTMSG_LED_ROWS; row++) {
-                    SK6805_set_led_color(row, 0, 0, 0);
-                }
-                SK6805_update();
-                for(int i = 0; i < 5; i++) {
+                for(int i = 0; i < 2; i++) {
                     furi_hal_vibro_on(true);
                     furi_delay_ms(100 * i);
                     furi_hal_vibro_on(false);
                     furi_delay_ms(100);
                 }
                 passes = 0;
+                tick = furi_get_tick();
             }
         }
 
@@ -330,9 +331,7 @@ static int32_t app_acc_worker(void* ctx) {
             }
         } else {
             for(row = 0; row < LIGHTMSG_LED_ROWS; row++) {
-                // Assign brightness accordingly to pixel
-                pixel = (uint8_t)(bitmapMatrix->array[row][column_directed - 1] * brightness);
-                //  Assign R/G/B on dimmed pixel value
+                //  Assign R/G/B off value
                 r = 0x00;
                 g = 0x00;
                 b = 0x00;
