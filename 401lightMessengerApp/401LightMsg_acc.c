@@ -116,6 +116,10 @@ static void swipes_init(void* ctx, uint8_t direction) {
     AppContext* app = (AppContext*)ctx;
     AppAcc* appAcc = (AppAcc*)app->sceneAcc;
 
+    if(appAcc == NULL) {
+        return;
+    }
+
     if(appAcc->direction != direction) {
         if(appAcc->cyclesAvg != 0)
             appAcc->cyclesAvg = (appAcc->cyclesAvg + appAcc->cycles) / 2;

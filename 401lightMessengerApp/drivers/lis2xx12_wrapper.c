@@ -5,21 +5,31 @@
 
 int32_t lis2dh12_init(void* stmdev) {
     // Interrupt registers
-    lis2dh12_int1_cfg_t int1_cfg;
-    lis2dh12_int2_cfg_t int2_cfg;
+    lis2dh12_int1_cfg_t int1_cfg = {0};
+    lis2dh12_int2_cfg_t int2_cfg = {0};
 
     // Pin registers
-    lis2dh12_ctrl_reg3_t pin_int1_cfg;
-    lis2dh12_ctrl_reg6_t pin_int2_cfg;
+    lis2dh12_ctrl_reg3_t pin_int1_cfg = {0};
+    lis2dh12_ctrl_reg6_t pin_int2_cfg = {0};
 
     pin_int2_cfg.int_polarity = PARAM_INT_POLARITY;
     pin_int2_cfg.i2_ia1 = PROPERTY_DISABLE;
     pin_int2_cfg.i2_ia2 = PROPERTY_ENABLE;
+    pin_int2_cfg.i2_boot = PROPERTY_DISABLE;
+    pin_int2_cfg.i2_act = PROPERTY_DISABLE;
+    pin_int2_cfg.i2_click = PROPERTY_DISABLE;
+    pin_int2_cfg.not_used_01 = PROPERTY_DISABLE;
+    pin_int2_cfg.not_used_02 = PROPERTY_DISABLE;
     lis2dh12_pin_int2_config_set(stmdev, &pin_int2_cfg);
 
     pin_int1_cfg.i1_zyxda = PROPERTY_DISABLE;
     pin_int1_cfg.i1_ia1 = PROPERTY_ENABLE;
     pin_int1_cfg.i1_ia2 = PROPERTY_DISABLE;
+    pin_int1_cfg.i1_click = PROPERTY_DISABLE;
+    pin_int1_cfg.i1_overrun = PROPERTY_DISABLE;
+    pin_int1_cfg.i1_wtm = PROPERTY_DISABLE;
+    pin_int1_cfg.not_used_01 = PROPERTY_DISABLE;
+    pin_int1_cfg.not_used_02 = PROPERTY_DISABLE;
     lis2dh12_pin_int1_config_set(stmdev, &pin_int1_cfg);
 
     // lis2dh12 general configuration
