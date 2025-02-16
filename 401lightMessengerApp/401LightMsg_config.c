@@ -182,10 +182,10 @@ const float lightmsg_tone_value[] = {
 
 const char* const lightmsg_tone_text[] = {
     "Off",
-    "Tone 1",
-    "Tone 2",
-    "Tone 3",
-    "Tone 4",
+    "Note 1",
+    "Note 2",
+    "Note 3",
+    "Note 4",
 };
 
 static uint8_t sine_wave[256] = {
