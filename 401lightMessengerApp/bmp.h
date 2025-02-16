@@ -61,6 +61,7 @@ typedef struct {
     uint8_t width;
     uint8_t height;
     uint8_t** array;
+    void* next_bitmap;
 } bitmapMatrix;
 
 typedef struct {

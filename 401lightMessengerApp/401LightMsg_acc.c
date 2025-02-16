@@ -197,6 +197,10 @@ static int32_t app_acc_worker(void* ctx) {
     bool speaker = furi_hal_speaker_acquire(100);
     uint32_t render_delay_us = lightmsg_width_value[light_msg_data->width];
 
+    uint32_t tick = furi_get_tick();
+    uint32_t passes = 0;
+    uint8_t end_count = 0;
+
     while(running) {
         // Checks if the thread must be ended.
         if(furi_thread_flags_get()) {
@@ -212,6 +216,13 @@ static int32_t app_acc_worker(void* ctx) {
             swipes_init(app, !appAcc->direction);
         }
 
+        if(appAcc->cycles == 1) {
+            passes++;
+        }
+        if(passes < 3) {
+            tick = furi_get_tick();
+        }
+
         if(appAcc->cycles == 1 && speaker) {
             float freq;
             if((appAcc->direction ^ light_msg_data->orientation)) {
@@ -224,6 +235,36 @@ static int32_t app_acc_worker(void* ctx) {
             }
         } else if(appAcc->cycles == 10 && speaker) {
             furi_hal_speaker_stop();
+        }
+
+        if((furi_get_tick() - tick) > lightmsg_speed_value[light_msg_data->speed]) {
+            tick = furi_get_tick();
+            if(bitmapMatrix->next_bitmap) {
+                bitmapMatrix = bitmapMatrix->next_bitmap;
+            } else {
+                if(++end_count > 1) {
+                    end_count = 0;
+                    bitmapMatrix = bitmapMatrix->next_bitmap;
+                }
+            }
+        }
+
+        if(bitmapMatrix == NULL) {
+            bitmapMatrix = appAcc->bitmapMatrix;
+            if(bitmapMatrix->next_bitmap != NULL) {
+                furi_hal_speaker_stop();
+                for(row = 0; row < LIGHTMSG_LED_ROWS; row++) {
+                    SK6805_set_led_color(row, 0, 0, 0);
+                }
+                SK6805_update();
+                for(int i = 0; i < 5; i++) {
+                    furi_hal_vibro_on(true);
+                    furi_delay_ms(100 * i);
+                    furi_hal_vibro_on(false);
+                    furi_delay_ms(100);
+                }
+                passes = 0;
+            }
         }
 
         /*             Display diagram
@@ -439,7 +480,31 @@ void app_scene_acc_on_enter(void* ctx) {
 
     switch(appAcc->displayMode) {
     case APPACC_DISPLAYMODE_TEXT:
-        appAcc->bitmapMatrix = bitMatrix_text_create((char*)light_msg_data->text, LightMsgSetFont);
+        if(light_msg_data->speed > 0) {
+            char buf[sizeof(light_msg_data->text)];
+            strncpy(buf, light_msg_data->text, sizeof(buf));
+            size_t len = strlen(buf);
+            size_t start = 0;
+            bitmapMatrix* bitMatrix_last = NULL;
+            for(size_t i = 0; i <= len; i++) {
+                if(buf[i] == ' ' || buf[i] == '\0') {
+                    buf[i] = '\0';
+                    if(appAcc->bitmapMatrix == NULL) {
+                        appAcc->bitmapMatrix =
+                            bitMatrix_text_create((char*)&buf[0], LightMsgSetFont);
+                        bitMatrix_last = appAcc->bitmapMatrix;
+                    } else {
+                        bitMatrix_last->next_bitmap =
+                            bitMatrix_text_create((char*)&buf[start], LightMsgSetFont);
+                        bitMatrix_last = bitMatrix_last->next_bitmap;
+                    }
+                    start = i + 1;
+                }
+            }
+        } else {
+            appAcc->bitmapMatrix =
+                bitMatrix_text_create((char*)light_msg_data->text, LightMsgSetFont);
+        }
         break;
 
     case APPACC_DISPLAYMODE_BITMAP:

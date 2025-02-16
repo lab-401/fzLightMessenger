@@ -34,6 +34,10 @@ void bitmapMatrix_free(bitmapMatrix* bitMatrix) {
         free(bitMatrix->array[i]);
     }
     free(bitMatrix->array);
+    if(bitMatrix->next_bitmap) {
+        bitmapMatrix_free((bitmapMatrix*)bitMatrix->next_bitmap);
+        bitMatrix->next_bitmap = NULL;
+    }
     free(bitMatrix);
 }
 
@@ -187,6 +191,7 @@ bitmapMatrix* bmp_to_bitmapMatrix(const char* path) {
     bitMatrix->height = image.info_header.biHeight;
 
     bitMatrix->array = malloc(image.info_header.biHeight * sizeof(uint8_t*));
+    bitMatrix->next_bitmap = NULL;
 
     row_padded = (image.info_header.biWidth + 7) / 8;
     row_padded = (row_padded + 3) & (~3);

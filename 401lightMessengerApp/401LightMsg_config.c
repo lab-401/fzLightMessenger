@@ -120,7 +120,7 @@ const char* const lightmsg_mirror_text[] = {
 
 // Speed (ms) to change text being display (0=never, 1 sec, 0.5 sec)
 const uint32_t lightmsg_speed_value[] = {
-    0,
+    UINT32_MAX,
     1000,
     500,
 };
@@ -456,13 +456,10 @@ AppConfig* app_config_alloc(void* ctx) {
     variable_item_set_current_value_index(item, light_msg_data->tone2);
     variable_item_set_current_value_text(item, lightmsg_tone_text[light_msg_data->tone2]);
 
-    /*
-    // Feature not implemented yet
     item = variable_item_list_add(
         appConfig->list, "Msg Speed", COUNT_OF(lightmsg_speed_text), on_change_speed, app);
     variable_item_set_current_value_index(item, light_msg_data->speed);
     variable_item_set_current_value_text(item, lightmsg_speed_text[light_msg_data->speed]);
-    */
 
 // Activate the accelerometer menu or not.
 #if PARAM_ACCELEROMETER_CONFIG_EN == 1
