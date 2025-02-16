@@ -43,6 +43,7 @@ void config_default_init(Configuration* config) {
     config->orientation = LIGHTMSG_DEFAULT_ORIENTATION; // Default orientation (e.g., false)
     // version 1.1 features
     config->mirror = LIGHTMSG_DEFAULT_MIRROR;
+    config->center = LIGHTMSG_DEFAULT_CENTER;
     config->speed = LIGHTMSG_DEFAULT_SPEED;
     config->width = LIGHTMSG_DEFAULT_WIDTH;
     config->accel = LIGHTMSG_DEFAULT_ACCEL;
@@ -90,6 +91,7 @@ l401_err config_to_json(Configuration* config, char** jsontxt) {
 
     // Add version 1.1 features
     cJSON_AddBoolToObject(json, "mirror", config->mirror);
+    cJSON_AddNumberToObject(json, "center", config->center);
     cJSON_AddNumberToObject(json, "speed", config->speed);
     cJSON_AddNumberToObject(json, "width", config->width);
     cJSON_AddNumberToObject(json, "accel", config->accel);
@@ -152,6 +154,7 @@ l401_err json_to_config(char* jsontxt, Configuration* config) {
 
     // Optional fields (version 1.1)
     cJSON* json_mirror = cJSON_GetObjectItemCaseSensitive(json, "mirror");
+    cJSON* json_center = cJSON_GetObjectItemCaseSensitive(json, "center");
     cJSON* json_speed = cJSON_GetObjectItemCaseSensitive(json, "speed");
     cJSON* json_width = cJSON_GetObjectItemCaseSensitive(json, "width");
     cJSON* json_accel = cJSON_GetObjectItemCaseSensitive(json, "accel");
@@ -180,14 +183,15 @@ l401_err json_to_config(char* jsontxt, Configuration* config) {
 
     // version 1.1+ features
     if(cJSON_IsBool(json_mirror)) {
-        if(!cJSON_IsNumber(json_speed) || !cJSON_IsNumber(json_width) ||
-           !cJSON_IsNumber(json_accel) || !cJSON_IsNumber(json_tone1) ||
-           !cJSON_IsNumber(json_tone2)) {
+        if(!cJSON_IsNumber(json_center) || !cJSON_IsNumber(json_speed) ||
+           !cJSON_IsNumber(json_width) || !cJSON_IsNumber(json_accel) ||
+           !cJSON_IsNumber(json_tone1) || !cJSON_IsNumber(json_tone2)) {
             cJSON_Delete(json);
             FURI_LOG_E(TAG, "Error: Malformed v1.1 configuration");
             return L401_ERR_MALFORMED;
         }
         config->mirror = cJSON_IsTrue(json_mirror) ? true : false;
+        config->center = (uint8_t)json_center->valuedouble;
         config->speed = (uint8_t)json_speed->valuedouble;
         config->width = (uint8_t)json_width->valuedouble;
         config->accel = (uint8_t)json_accel->valuedouble;
@@ -200,6 +204,7 @@ l401_err json_to_config(char* jsontxt, Configuration* config) {
             config->version = strdup(LIGHTMSG_VERSION);
         }
         config->mirror = LIGHTMSG_DEFAULT_MIRROR;
+        config->center = LIGHTMSG_DEFAULT_CENTER;
         config->speed = LIGHTMSG_DEFAULT_SPEED;
         config->width = LIGHTMSG_DEFAULT_WIDTH;
         config->accel = LIGHTMSG_DEFAULT_ACCEL;

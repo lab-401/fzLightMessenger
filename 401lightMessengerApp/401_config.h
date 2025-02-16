@@ -19,6 +19,7 @@
 #define LIGHTMSG_DEFAULT_BITMAPPATH  LIGHTMSGCONF_SAVE_FOLDER
 
 #define LIGHTMSG_DEFAULT_MIRROR 0
+#define LIGHTMSG_DEFAULT_CENTER 8
 #define LIGHTMSG_DEFAULT_SPEED  0
 #define LIGHTMSG_DEFAULT_WIDTH  1
 #define LIGHTMSG_DEFAULT_ACCEL  0
@@ -28,7 +29,8 @@
 #include "401_err.h"
 #include "app_params.h"
 
-typedef void (*color_animation_callback)(uint16_t tick, uint32_t* result, void* ctx);
+typedef void (
+    *color_animation_callback)(uint16_t tick, bool direction, uint32_t* result, void* ctx);
 typedef struct {
     char* version;
     char text[LIGHTMSG_MAX_TEXT_LEN + 1];
@@ -39,6 +41,7 @@ typedef struct {
     color_animation_callback cb;
     // New features
     bool mirror; // true = mirror, false = no mirror
+    uint8_t center; // center index
     uint8_t speed; // speed index
     uint8_t width; // width index
     uint8_t accel; // acceleration index

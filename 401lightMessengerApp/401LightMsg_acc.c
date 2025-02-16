@@ -63,6 +63,7 @@ static bitmapMatrix* bitMatrix_text_create(const char* text, bitmapMatrixFont* f
         return NULL;
     }
 
+    FuriString* str = furi_string_alloc();
     for(uint8_t h = 0; h < fontHeight; h++) {
         bitMatrix->array[h] = malloc(totalWidth * sizeof(uint8_t));
         bitMatrix->height = h;
@@ -80,7 +81,18 @@ static bitmapMatrix* bitMatrix_text_create(const char* text, bitmapMatrixFont* f
                     ((font[letterPtr + h] >> (fontWidth - w)) & 0x01) ? 0xff : 0x00;
             }
         }
+        for(uint8_t t = 0; t < totalWidth; t++) {
+            furi_string_cat(str, bitMatrix->array[h][t] ? "X" : " ");
+        }
+        FURI_LOG_I(
+            TAG,
+            "IMG %02d %02d %s",
+            bitMatrix->width,
+            bitMatrix->height,
+            furi_string_get_cstr(str));
+        furi_string_reset(str);
     }
+    furi_string_free(str);
     // complete the height
     bitMatrix->height++;
     return bitMatrix;
@@ -119,6 +131,7 @@ static void swipes_tick(void* ctx) {
 static void swipes_init(void* ctx, uint8_t direction) {
     AppContext* app = (AppContext*)ctx;
     AppAcc* appAcc = (AppAcc*)app->sceneAcc;
+    Configuration* light_msg_data = (Configuration*)app->data->config;
 
     if(appAcc == NULL) {
         return;
@@ -131,7 +144,8 @@ static void swipes_init(void* ctx, uint8_t direction) {
             appAcc->cyclesAvg = appAcc->cycles;
         // The center is offseted on the first third of the swipe motion to compensate
         // for the acceleration's interractions.
-        appAcc->cyclesCenter = (uint16_t)((appAcc->cyclesAvg) / 3);
+        appAcc->cyclesCenter =
+            (uint16_t)((appAcc->cyclesAvg) * lightmsg_center_value[light_msg_data->center]);
         appAcc->cycles = 0;
         appAcc->direction = direction;
     }
@@ -206,8 +220,10 @@ static int32_t app_acc_worker(void* ctx) {
     uint32_t render_delay_us = lightmsg_width_value[light_msg_data->width];
 
     uint32_t tick = furi_get_tick();
-    uint32_t passes = 0;
+    uint32_t direction_change_count = 0;
     uint8_t end_count = 0;
+
+    uint32_t message_duration_ms = lightmsg_speed_value[light_msg_data->speed];
 
     while(running) {
         // Checks if the thread must be ended.
@@ -220,55 +236,75 @@ static int32_t app_acc_worker(void* ctx) {
 
         // Update the cycles counter
         swipes_tick(appAcc);
-        if(appAcc->cycles > lightmsg_accel_value[light_msg_data->accel]) {
+
+        // Toggle direction once we have reached the maximum cycles (non-accelerometer mode)
+        if((light_msg_data->accel > 0) &&
+           (appAcc->cycles > lightmsg_accel_value[light_msg_data->accel])) {
             swipes_init(app, !appAcc->direction);
         }
 
+        // Count the number of times we change direction
         if(appAcc->cycles == 1) {
-            passes++;
+            direction_change_count++;
         }
-        if(passes < 3) {
+
+        // Don't start the timer if we have changed direction more than 3 times
+        if(direction_change_count < 3) {
             tick = furi_get_tick();
         }
 
-        if(appAcc->cycles == 1 && speaker) {
-            float freq;
-            if((appAcc->direction ^ light_msg_data->orientation)) {
-                freq = lightmsg_tone_value[light_msg_data->tone1];
-            } else {
-                freq = lightmsg_tone_value[light_msg_data->tone2];
-            }
-            if(freq > 0) {
-                furi_hal_speaker_start(freq, 1.0);
-            }
-        } else if(appAcc->cycles == 10 && speaker) {
-            furi_hal_speaker_stop();
-        }
-
-        if((furi_get_tick() - tick) > lightmsg_speed_value[light_msg_data->speed] &&
-           appAcc->cycles == 10) {
-            tick = furi_get_tick();
-            if(bitmapMatrix->next_bitmap) {
-                bitmapMatrix = bitmapMatrix->next_bitmap;
-            } else {
-                if(++end_count > 1) {
-                    end_count = 0;
+        // Beginning of the swipe
+        if(appAcc->cycles == 1) {
+            // Change the bitmap if we have exceeded the message duration
+            if((furi_get_tick() - tick) > message_duration_ms) {
+                if(bitmapMatrix->next_bitmap) {
                     bitmapMatrix = bitmapMatrix->next_bitmap;
+                } else {
+                    // Show the last message for a little longer
+                    if(++end_count > 1) {
+                        end_count = 0;
+                        bitmapMatrix = bitmapMatrix->next_bitmap;
+                    }
+                }
+
+                // Reset the timer
+                tick = furi_get_tick();
+            }
+
+            // Start the animation again once we have reached the end of the bitmaps
+            if(bitmapMatrix == NULL) {
+                // Start at the beginning of the bitmaps
+                bitmapMatrix = appAcc->bitmapMatrix;
+
+                // If we have multiple bitmaps, play a short vibration to signal the end of the message
+                if(bitmapMatrix->next_bitmap != NULL) {
+                    for(int i = 0; i < 2; i++) {
+                        furi_hal_vibro_on(true);
+                        furi_delay_ms(100 * i);
+                        furi_hal_vibro_on(false);
+                        furi_delay_ms(100);
+                    }
+
+                    direction_change_count = 0;
+                    tick = furi_get_tick();
                 }
             }
-        }
 
-        if(bitmapMatrix == NULL) {
-            bitmapMatrix = appAcc->bitmapMatrix;
-            if(bitmapMatrix->next_bitmap != NULL) {
-                for(int i = 0; i < 2; i++) {
-                    furi_hal_vibro_on(true);
-                    furi_delay_ms(100 * i);
-                    furi_hal_vibro_on(false);
-                    furi_delay_ms(100);
+            if(speaker) {
+                float freq;
+                if((appAcc->direction ^ light_msg_data->orientation)) {
+                    freq = lightmsg_tone_value[light_msg_data->tone1];
+                } else {
+                    freq = lightmsg_tone_value[light_msg_data->tone2];
                 }
-                passes = 0;
-                tick = furi_get_tick();
+                if(freq > 0) {
+                    furi_hal_speaker_start(freq, 1.0);
+                }
+            }
+        } else if(appAcc->cycles == 10) {
+            // Turn off the speaker after 10 cycles
+            if(speaker) {
+                furi_hal_speaker_stop();
             }
         }
 
@@ -309,11 +345,11 @@ static int32_t app_acc_worker(void* ctx) {
              (appAcc->cyclesCenter + ((bitmapMatrix->width - appAcc->direction) / 2)));
 
         // Update the color according to the current shader
-        shader(time, color, app);
+        shader(time, appAcc->direction ^ light_msg_data->orientation, color, app);
 
         if(is_bitmap_window) {
             if(light_msg_data->mirror) {
-                column_directed = bitmapMatrix->width - column_directed - 1;
+                column_directed = bitmapMatrix->width - column_directed;
             }
             // Draws each rows for each collumns
             for(row = 0; row < LIGHTMSG_LED_ROWS; row++) {

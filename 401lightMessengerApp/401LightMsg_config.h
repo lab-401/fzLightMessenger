@@ -82,6 +82,10 @@ typedef enum {
 extern const LightMsg_Mirror lightmsg_mirror_value[];
 extern const char* const lightmsg_mirror_text[];
 
+// Percentage of total swipe to be considered as center
+extern const float lightmsg_center_value[];
+extern const char* const lightmsg_center_text[];
+
 // Speed (ms) to change text being display (0=never, 1 sec, 0.5 sec)
 extern const uint32_t lightmsg_speed_value[];
 extern const char* const lightmsg_speed_text[];
@@ -102,11 +106,12 @@ extern const char* const lightmsg_tone_text[];
 extern const char* const lightmsg_color_text[];
 extern color_animation_callback lightmsg_color_value[];
 
-void LightMsg_color_cb_flat(uint16_t tick, uint32_t* result, void* ctx);
-void LightMsg_color_cb_nyancat(uint16_t tick, uint32_t* result, void* ctx);
-void LightMsg_color_cb_vaporwave(uint16_t tick, uint32_t* result, void* ctx);
-void LightMsg_color_cb_sparkle(uint16_t tick, uint32_t* result, void* ctx);
-void LightMsg_color_cb_rainbow(uint16_t tick, uint32_t* result, void* ctx);
+void LightMsg_color_cb_flat(uint16_t tick, bool direction, uint32_t* result, void* ctx);
+void LightMsg_color_cb_directional(uint16_t tick, bool direction, uint32_t* result, void* ctx);
+void LightMsg_color_cb_nyancat(uint16_t tick, bool direction, uint32_t* result, void* ctx);
+void LightMsg_color_cb_vaporwave(uint16_t tick, bool direction, uint32_t* result, void* ctx);
+void LightMsg_color_cb_sparkle(uint16_t tick, bool direction, uint32_t* result, void* ctx);
+void LightMsg_color_cb_rainbow(uint16_t tick, bool direction, uint32_t* result, void* ctx);
 
 AppConfig* app_config_alloc();
 void app_config_free(AppConfig* appConfig);
