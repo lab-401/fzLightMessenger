@@ -14,6 +14,7 @@
 #define LIGHTMSG_VERSION             "1.1"
 #define LIGHTMSG_DEFAULT_ORIENTATION 0
 #define LIGHTMSG_DEFAULT_BRIGHTNESS  3
+#define LIGHTMSG_DEFAULT_SENSIBILITY 1
 #define LIGHTMSG_DEFAULT_COLOR       1
 #define LIGHTMSG_DEFAULT_TEXT        "Lab401"
 #define LIGHTMSG_DEFAULT_BITMAPPATH  LIGHTMSGCONF_SAVE_FOLDER
@@ -37,6 +38,7 @@ typedef struct {
     char bitmapPath[LIGHTMSG_MAX_BITMAPPATH_LEN + 1];
     uint8_t color;
     uint8_t brightness;
+    uint8_t sensitivity;
     bool orientation;
     color_animation_callback cb;
     // New features

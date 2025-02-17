@@ -30,6 +30,16 @@ const char* const lightmsg_brightness_text[] = {
     "Blinding",
 };
 
+const uint8_t lightmsg_sensitivity_value[] = {
+    60, // Low sensitivity
+    40, // High sensitivity
+};
+
+const char* const lightmsg_sensitivity_text[] = {
+    "Low",
+    "High",
+};
+
 const uint32_t lightmsg_colors_flat[] = {
     0xFF0000, // COLOR_RED
     0x7F0F00, // COLOR_ORANGE
@@ -344,6 +354,20 @@ void on_change_brightness(VariableItem* item) {
 }
 
 /**
+ * @brief Callback function to handle sensitivity menu
+ *
+ * @param item Selected item
+ */
+void on_change_sensitivity(VariableItem* item) {
+    AppContext* app = variable_item_get_context(item);
+    Configuration* light_msg_data = (Configuration*)app->data->config;
+    uint8_t index = variable_item_get_current_value_index(item);
+    light_msg_data->sensitivity = index;
+
+    variable_item_set_current_value_text(item, lightmsg_sensitivity_text[index]);
+}
+
+/**
  * @brief Callback function to handle color menu
  *
  * @param item Selected item
@@ -466,6 +490,16 @@ AppConfig* app_config_alloc(void* ctx) {
     variable_item_set_current_value_text(
         item, lightmsg_brightness_text[light_msg_data->brightness]);
 #endif
+    item = variable_item_list_add(
+        appConfig->list,
+        "Sensitivity",
+        COUNT_OF(lightmsg_sensitivity_text),
+        on_change_sensitivity,
+        app);
+    variable_item_set_current_value_index(item, light_msg_data->sensitivity); // 0,10,20,30,...
+    variable_item_set_current_value_text(
+        item, lightmsg_sensitivity_text[light_msg_data->sensitivity]);
+
     item = variable_item_list_add(
         appConfig->list, "Color", COUNT_OF(lightmsg_color_text), on_change_color, app);
     variable_item_set_current_value_index(item, light_msg_data->color); // 0,10,20,30,...

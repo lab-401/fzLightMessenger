@@ -46,7 +46,8 @@ int32_t lis2dh12_init(void* stmdev) {
     lis2dh12_int1_gen_conf_set(stmdev, &int1_cfg);
 
     lis2dh12_int1_pin_notification_mode_set(stmdev, LIS2DH12_INT1_PULSED);
-    lis2dh12_int1_gen_threshold_set(stmdev, PARAM_INT1_THRESHOLD);
+    lis2dh12_int1_gen_threshold_set(
+        stmdev, PARAM_INT1_THRESHOLD); // default threshold, overwritten
     lis2dh12_int1_gen_duration_set(stmdev, PARAM_INT1_DURATION);
 
     // lis2dh12 INT2
@@ -57,10 +58,16 @@ int32_t lis2dh12_init(void* stmdev) {
     lis2dh12_int2_gen_conf_set(stmdev, &int2_cfg);
 
     lis2dh12_int2_pin_notification_mode_set(stmdev, LIS2DH12_INT2_PULSED);
-    lis2dh12_int2_gen_threshold_set(stmdev, PARAM_INT2_THRESHOLD);
+    lis2dh12_int2_gen_threshold_set(
+        stmdev, PARAM_INT2_THRESHOLD); // default threshold, overwritten
     lis2dh12_int2_gen_duration_set(stmdev, PARAM_INT2_DURATION);
 
     return 0;
+}
+
+void lis2dh12_set_sensitivity(void* stmdev, uint8_t sensitivity) {
+    lis2dh12_int1_gen_threshold_set(stmdev, sensitivity);
+    lis2dh12_int2_gen_threshold_set(stmdev, sensitivity);
 }
 
 int32_t platform_write(void* handle, uint8_t reg, const uint8_t* bufp, uint16_t len) {

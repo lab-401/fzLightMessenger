@@ -50,6 +50,9 @@ typedef enum {
 extern const double lightmsg_brightness_value[];
 extern const char* const lightmsg_brightness_text[];
 
+extern const uint8_t lightmsg_sensitivity_value[];
+extern const char* const lightmsg_sensitivity_text[];
+
 #define COLOR_RED    0
 #define COLOR_ORANGE 1
 #define COLOR_YELLOW 2

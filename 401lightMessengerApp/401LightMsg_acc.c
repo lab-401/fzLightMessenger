@@ -214,6 +214,8 @@ static int32_t app_acc_worker(void* ctx) {
     // Initialize the LIS2DH12 if we are using the accelerometer.
     if(light_msg_data->accel == 0) {
         lis2dh12_init(&app->data->lis2dh12);
+        lis2dh12_set_sensitivity(
+            &app->data->lis2dh12, lightmsg_sensitivity_value[light_msg_data->sensitivity]);
     }
 
     bool speaker = furi_hal_speaker_acquire(100);
