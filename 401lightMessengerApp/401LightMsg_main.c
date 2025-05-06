@@ -248,23 +248,23 @@ void app_free(AppContext* app_ctx) {
     furi_assert(app_ctx);
 
     // Free AppViewSplash
-        view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewSplash);
-        app_splash_free(app_ctx->sceneSplash);
+    view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewSplash);
+    app_splash_free(app_ctx->sceneSplash);
     // Free AppViewConfig
-        view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewConfig);
-        app_config_free(app_ctx->sceneConfig);
+    view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewConfig);
+    app_config_free(app_ctx->sceneConfig);
     // Free AppViewAcc
-        view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewAcc);
-        app_acc_free(app_ctx->sceneAcc);
+    view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewAcc);
+    app_acc_free(app_ctx->sceneAcc);
     // Free BMP Editor
-        view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewBmpEditor);
-        app_bmp_editor_free(app_ctx);
+    view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewBmpEditor);
+    app_bmp_editor_free(app_ctx);
     // Free AppViewSetText
-        view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewSetText);
-        text_input_free(app_ctx->sceneSetText);
+    view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewSetText);
+    text_input_free(app_ctx->sceneSetText);
     // Free AppViewMainMenu
-        view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewMainMenu);
-        submenu_free(app_ctx->mainmenu);
+    view_dispatcher_remove_view(app_ctx->view_dispatcher, AppViewMainMenu);
+    submenu_free(app_ctx->mainmenu);
 
     view_dispatcher_free(app_ctx->view_dispatcher);
     scene_manager_free(app_ctx->scene_manager);
