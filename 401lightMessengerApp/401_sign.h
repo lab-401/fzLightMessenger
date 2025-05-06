@@ -16,6 +16,12 @@
 #include <401_light_msg_icons.h>
 #include "401_err.h"
 
-int32_t l401_sign_app(l401_err err);
+int32_t l401_sign_app(l401_err err, void* app_context);
+
+typedef struct {
+    FuriSemaphore* semaphore;
+    void* app_context;
+    int32_t status_code;
+} SignContext;
 
 #endif /* end of include guard: L401_SIGN_H_ */

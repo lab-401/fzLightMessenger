@@ -445,11 +445,11 @@ static bool set_bitmap_dialog(void* ctx) {
                 FURI_LOG_I(
                     TAG, "Successfully saved configuration to %s.", LIGHTMSGCONF_CONFIG_FILE);
             } else {
-                l401_sign_app(res);
+                l401_sign_app(res, app);
                 set = false;
             }
         } else {
-            l401_sign_app(L401_ERR_BMP_FILE);
+            l401_sign_app(L401_ERR_BMP_FILE, app);
             set = false;
         }
     }
