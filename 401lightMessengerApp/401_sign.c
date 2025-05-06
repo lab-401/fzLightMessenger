@@ -5,6 +5,7 @@
  *    + Tixlegeek
  */
 #include "./401_sign.h"
+#include "401_err.h"
 static void l401_sign_input_callback(InputEvent* input, void* ctx) {
     FuriSemaphore* semaphore = ctx;
     if((input->type == InputTypeShort) && (input->key == InputKeyBack)) {
@@ -75,9 +76,21 @@ static void l401_sign_render_callback(Canvas* canvas, void* status) {
     }
 }
 
-int32_t l401_sign_app(l401_err err) {
+l401_err check_hat(void* app); // Implemented in 401LightMsg_main.c
+
+static void on_tick(void* ctx) {
+    SignContext* sign_context = ctx;
+    l401_err err = check_hat(sign_context->app_context);
+    if (err == L401_OK) {
+        sign_context->status_code = 0;
+        furi_semaphore_release(sign_context->semaphore);
+    }
+}
+
+int32_t l401_sign_app(l401_err err, void* app_context) {
     FuriSemaphore* semaphore = furi_semaphore_alloc(1, 0);
     furi_assert(semaphore);
+    SignContext sign_context = { semaphore, app_context, (err == L401_ERR_HARDWARE) ? 1 : 0 };
     ViewPort* view_port = view_port_alloc();
     view_port_draw_callback_set(view_port, l401_sign_render_callback, &err);
     view_port_input_callback_set(view_port, l401_sign_input_callback, semaphore);
@@ -85,12 +98,21 @@ int32_t l401_sign_app(l401_err err) {
     Gui* gui = furi_record_open(RECORD_GUI);
     gui_add_view_port(gui, view_port, GuiLayerFullscreen);
 
+    FuriTimer* timer = NULL;
+    if (err == L401_ERR_HARDWARE) {
+        timer = furi_timer_alloc(on_tick, FuriTimerTypePeriodic, &sign_context);
+        furi_timer_start(timer, 1000);
+    }
     view_port_update(view_port);
 
     furi_check(furi_semaphore_acquire(semaphore, FuriWaitForever) == FuriStatusOk);
+    if (timer) {
+        furi_timer_stop(timer);
+        furi_timer_free(timer);
+    }
     gui_remove_view_port(gui, view_port);
     view_port_free(view_port);
     furi_record_close(RECORD_GUI);
     furi_semaphore_free(semaphore);
-    return 0;
+    return sign_context.status_code;
 }

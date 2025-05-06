@@ -5,6 +5,7 @@
  *    + Tixlegeek
  */
 #include "401LightMsg_main.h"
+#include "401_err.h"
 
 //#include <assets_icons.h>
 static const char* TAG = "401_LightMsg";
@@ -116,7 +117,7 @@ uint32_t app_navigateTo_Splash_callback(void* ctx) {
     return AppViewSplash;
 }
 
-l401_err check_hat(AppContext* app) {
+l401_err check_hat(void* app) {
     furi_assert(app);
     AppContext* app_ctx = app;
     uint8_t acc_id = 0;
@@ -286,7 +287,7 @@ void app_free(AppContext* app_ctx) {
 int32_t lightMsg_app(void* p) {
     UNUSED(p);
     AppContext* app_ctx = app_alloc();
-    FURI_LOG_I(TAG, "Start Lab401's LighMsg app");
+    FURI_LOG_I(TAG, "Start Lab401's LightMsg app");
     if(app_ctx->err == L401_OK) {
         with_view_model(
             app_splash_get_view(app_ctx->sceneSplash),
@@ -297,7 +298,24 @@ int32_t lightMsg_app(void* p) {
         app_free(app_ctx);
         furi_record_close(RECORD_GUI);
     } else {
-        l401_sign_app(app_ctx->err);
+        uint32_t status = l401_sign_app(app_ctx->err, app_ctx);
+        bool retry = (app_ctx->err == L401_ERR_HARDWARE && status == 0);
+        free(app_ctx->data);
+        app_ctx->data = NULL;
+        submenu_free(app_ctx->mainmenu);
+        app_ctx->mainmenu = NULL;
+        view_dispatcher_free(app_ctx->view_dispatcher);
+        app_ctx->view_dispatcher = NULL;
+        scene_manager_free(app_ctx->scene_manager);
+        app_ctx->scene_manager = NULL;
+        furi_record_close(RECORD_NOTIFICATION);
+        furi_record_close(RECORD_GUI);
+        free(app_ctx);
+        app_ctx = NULL;
+
+        if (retry) {
+            lightMsg_app(NULL);
+        }
     }
 
     return 0;
